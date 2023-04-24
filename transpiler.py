@@ -2,9 +2,8 @@ import ast
 import logging
 import csast
 
-from pathlib import Path
 from cswriter import CSWriter
-from util import cs_constant_repr, find_keyword, namespacable
+from util import cs_constant_repr, find_keyword, namespacable, statement
 
 
 class Transpiler(ast.NodeVisitor):
@@ -66,6 +65,7 @@ class Transpiler(ast.NodeVisitor):
         with self.cswriter.block():
             self.traverse(node.body)
 
+    @statement
     def visit_Assign(self, node: ast.Assign):        
         target = node.targets[0]
 
@@ -79,7 +79,6 @@ class Transpiler(ast.NodeVisitor):
         self.traverse(node.targets[0])
         self.cswriter.write(" = ")
         self.traverse(node.value)
-        self.cswriter.write(";")
 
     def visit_Attribute(self, node: ast.Attribute):
         self.traverse(node.value)
@@ -132,15 +131,15 @@ class Transpiler(ast.NodeVisitor):
             for element in self.cswriter.enumerate_join(node.elts, ", "):
                 self.traverse(element)
     
+    @statement
     def visit_Expr(self, node: ast.Expr):
         self.cswriter.write_indents()
         self.traverse(node.value)
-        self.cswriter.write(";")
 
+    @statement
     def visit_Return(self, node: ast.Return):
         self.cswriter.write_indented("return ")
         self.traverse(node.value)
-        self.cswriter.write(";")
 
     def visit_Constant(self, node: ast.Constant):
         self.cswriter.write(cs_constant_repr(node.value))
@@ -166,13 +165,13 @@ class Transpiler(ast.NodeVisitor):
             with self.cswriter.block():
                 self.traverse(node.orelse)
 
+    @statement
     def visit_AnnAssign(self, node: ast.AnnAssign):
         self.traverse(node.annotation)
         self.cswriter.write(" ")
         self.traverse(node.target)
         self.cswriter.write(" = ")
         self.traverse(node.value)
-        self.cswriter.write(";")
 
     boolops = {"And": "&&", "Or": "||"}
 
@@ -291,12 +290,13 @@ class Transpiler(ast.NodeVisitor):
             raise TranspilerException(f"expected default case node with pattern set to None, but got {repr(node.pattern)}. Please file an issue")
         self.cswriter.write_indented("default:")
 
+    @statement
     def visit_Raise(self, node: ast.Raise):
         self.cswriter.write_indented("throw ")
         self.traverse(node.exc)
-        self.cswriter.write(";")
 
     # CS SPECIFIC VISITORS
+    @statement
     def visit_CsFieldDef(self, node: csast.FieldDef):
         self.cswriter.write_indented(f"{node.visibility} ")
 
@@ -309,8 +309,6 @@ class Transpiler(ast.NodeVisitor):
         if node.value is not None:
             self.cswriter.write(" = ")
             self.traverse(node.value)
-
-        self.cswriter.write(";")
 
     def cs_visit(self, node: csast.AST):
         method = 'visit_Cs' + node.__class__.__name__

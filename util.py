@@ -33,6 +33,15 @@ def get_class_namespace(decorators: list[ast.expr]):
 
     return None
 
+def statement(func):
+    def helper(*args, **kwargs):
+        self, = args
+        func(*args, **kwargs)
+        self.cswriter.write(";")
+        
+
+    return helper
+
 def namespacable(func):
     def helper(*args, **kwargs):
         self, node = args
