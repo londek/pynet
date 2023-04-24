@@ -1,4 +1,5 @@
 import ast
+import logging
 import csast
 
 from pathlib import Path
@@ -104,6 +105,13 @@ class Transpiler(ast.NodeVisitor):
 
     def visit_Name(self, node: ast.Name):
         self.cswriter.write(node.id)
+
+    def visit_List(self, node: ast.List):
+        logging.info(f"Using dynamicly typed array on [CS line: {self.cswriter.count_lines()} / Py line: {node.lineno}]")
+        self.cswriter.write("new dynamic[]")
+        with self.cswriter.delimit("{", "}"):
+            for element in self.cswriter.enumerate_join(node.elts, ", "):
+                self.traverse(element)
     
     def visit_Expr(self, node: ast.Expr):
         self.cswriter.write_indents()
