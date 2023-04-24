@@ -73,7 +73,7 @@ class Transpiler(ast.NodeVisitor):
         elif isinstance(target, ast.Name):
             self.cswriter.write_indented("var ")
         else:
-            raise TranspilerExcetion("forbidden assignment target")
+            raise TranspilerException("forbidden assignment target")
 
         self.traverse(node.targets[0])
         self.cswriter.write(" = ")
@@ -177,7 +177,7 @@ class Transpiler(ast.NodeVisitor):
 
     def visit_Subscript(self, node: ast.Subscript):
         if isinstance(node.slice, ast.Slice):
-            raise TranspilerExcetion("subslices are not supported")
+            raise TranspilerException("subslices are not supported")
 
         self.traverse(node.value)
         with self.cswriter.delimit("[", "]"):
@@ -205,7 +205,7 @@ class Transpiler(ast.NodeVisitor):
                             end = range_func[1]
                             step = range_func[2]
                         case _:
-                            raise TranspilerExcetion("unknown args for range in for loop")
+                            raise TranspilerException("unknown args for range in for loop")
 
                     # we have to assume type is int since there 
                     # are no type annotations for loops in Python
@@ -416,7 +416,7 @@ def get_function_arguments(function_node: ast.FunctionDef):
 
     for arg in function_node.args.args[start_index:]:
         if not arg.annotation:
-            raise TranspilerExcetion(f"No type annotation for argument {arg.arg}")
+            raise TranspilerException(f"No type annotation for argument {arg.arg}")
 
         args.append(f"{arg.annotation.id} {arg.arg}")
 
@@ -469,5 +469,5 @@ def replace_all_references(node, old, new):
     else:
         return ReferenceReplacer(old, new).visit(node)
         
-class TranspilerExcetion(Exception):
+class TranspilerException(Exception):
     pass
