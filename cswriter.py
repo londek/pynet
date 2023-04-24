@@ -46,8 +46,6 @@ class CSWriter:
     def enumerate_join(self, elements, delim):
         count = 0
         for element in elements:
-            print(count)
-
             if count > 0:
                 self.write(delim)
 

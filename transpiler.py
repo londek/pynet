@@ -1,30 +1,10 @@
 import ast
-import astpretty
-import logging
 import csast
 
 from pathlib import Path
 from cswriter import CSWriter
 from util import cs_constant_repr, find_keyword, namespacable
 
-def transpile_directory(path):
-    logging.info("Transpiling source...")
-    for source_file in Path(path).rglob("*.py"):
-        transpile_file(source_file)
-    logging.info("Source has been transpiled.")
-
-def transpile_file(path):
-    logging.info(f"Transpiling {path}...")
-    for source_file in Path(path).rglob("*.py"):
-        with open(source_file) as f:
-            try:
-                transpiled = Transpiler().transpile(f.read())
-                dest_file = source_file.with_suffix(".cs")
-                with open(dest_file, "w+") as dest:
-                    dest.write(transpiled)
-            except Exception as e:
-                logging.exception(f"Caught error while transpiling {source_file}:", exc_info=e)
-    logging.info(f"{path} has been transpiled.")
 
 class Transpiler(ast.NodeVisitor):
     cswriter = CSWriter()
@@ -32,13 +12,8 @@ class Transpiler(ast.NodeVisitor):
     def __init__(self) -> None:
         super().__init__()
     
-    def transpile(self, source_str):
-        tree = ast.parse(source_str)
-
-        # astpretty.pprint(tree)
-
+    def transpile(self, tree):
         self.visit(tree)
-
         return self.cswriter.build()
 
     def visit_Import(self, node: ast.Import):
@@ -402,8 +377,6 @@ def destructure_args(nodes: list[ast.expr]):
     args = []
 
     for node in nodes:
-        print(node)
-
         if isinstance(node, ast.Call):
             if node.func.id == "generic":
                 generics.append(node.args[0].id)
