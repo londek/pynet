@@ -259,6 +259,11 @@ class Transpiler(ast.NodeVisitor):
             raise TranspilerException(f"expected default case node with pattern set to None, but got {repr(node.pattern)}. Please file an issue")
         self.cswriter.write_indented("default:")
 
+    def visit_Raise(self, node: ast.Raise):
+        self.cswriter.write_indented("throw ")
+        self.traverse(node.exc)
+        self.cswriter.write(";")
+
     # CS SPECIFIC VISITORS
     def visit_CsFieldDef(self, node: csast.FieldDef):
         self.cswriter.write_indented(f"{node.visibility} ")
