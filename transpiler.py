@@ -13,7 +13,7 @@ class Transpiler(ast.NodeVisitor):
         super().__init__()
     
     def transpile(self, tree):
-        self.visit(tree)
+        self.traverse(tree)
         return self.cswriter.build()
 
     def visit_Import(self, node: ast.Import):
@@ -87,7 +87,12 @@ class Transpiler(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call):
         generics, args = destructure_args(node.args)
 
-        self.visit(node.func)
+        if isinstance(node.func, ast.Name) and node.func.id == "new":
+            self.cswriter.write("new ")
+            self.traverse(node.args[0])
+            return
+
+        self.traverse(node.func)
 
         if len(generics) > 0:
             with self.cswriter.delimit_generic():
@@ -95,7 +100,7 @@ class Transpiler(ast.NodeVisitor):
 
         with self.cswriter.delimit_args():
             for arg in self.cswriter.enumerate_join(args, ", "):
-                self.visit(arg)
+                self.traverse(arg)
 
     def visit_Name(self, node: ast.Name):
         self.cswriter.write(node.id)
