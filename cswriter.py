@@ -2,16 +2,16 @@ from contextlib import contextmanager
 
 class CSWriter:
     text = ""
-    indent = 0
+    indents = 0
 
     def write(self, text):
         self.text += text
 
     def write_indents(self):
         if self.text == "":
-            self.text = "    " * self.indent
+            self.text = "    " * self.indents
         else:
-            self.text += "\n" + "    " * self.indent
+            self.text += "\n" + "    " * self.indents
 
     def write_indented(self, text):
         self.write_indents()
@@ -55,10 +55,16 @@ class CSWriter:
     @contextmanager
     def block(self):
         self.write_indented("{")
-        self.indent += 1
+        self.indents += 1
         yield
-        self.indent -= 1
+        self.indents -= 1
         self.write_indented("}")
+
+    @contextmanager
+    def indent(self):
+        self.indents += 1
+        yield
+        self.indents -= 1
 
     def build(self):
         return self.text

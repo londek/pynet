@@ -233,6 +233,32 @@ class Transpiler(ast.NodeVisitor):
         with self.cswriter.block():
             self.traverse(node.body)
 
+    def visit_Match(self, node: ast.Match):
+        self.cswriter.write_indented("switch")
+        
+        with self.cswriter.delimit_args():
+            self.traverse(node.subject)
+        
+        with self.cswriter.block():
+            self.traverse(node.cases)
+
+    def visit_match_case(self, node: ast.match_case):
+        self.traverse(node.pattern)
+        with self.cswriter.indent():
+            self.traverse(node.body)
+
+    def visit_MatchValue(self, node: ast.MatchValue):
+        self.cswriter.write_indented("case ")
+        self.traverse(node.value)
+        self.cswriter.write(":")
+
+    def visit_MatchAs(self, node: ast.MatchAs):
+        if node.name != None:
+            raise TranspilerException(f"expected default case node with name set to None, but got {repr(node.name)}. Please file an issue")
+        elif node.pattern != None:
+            raise TranspilerException(f"expected default case node with pattern set to None, but got {repr(node.pattern)}. Please file an issue")
+        self.cswriter.write_indented("default:")
+
     # CS SPECIFIC VISITORS
     def visit_CsFieldDef(self, node: csast.FieldDef):
         self.cswriter.write_indented(f"{node.visibility} ")
