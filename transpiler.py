@@ -183,6 +183,56 @@ class Transpiler(ast.NodeVisitor):
         with self.cswriter.delimit("[", "]"):
             self.traverse(node.slice)
 
+    def visit_For(self, node: ast.For):
+        if isinstance(node.iter, ast.Call) and isinstance(node.iter.func, ast.Name) and node.iter.func.id == "range":
+            self.cswriter.write_indented("for")
+            with self.cswriter.delimit_args():
+                if node.iter.func.id == "range":
+                    range_func = node.iter
+
+                    begin = ast.Constant(value=0)
+                    end = ast.Constant(value=0)
+                    step = ast.Constant(value=1)
+
+                    match len(range_func.args):
+                        case 1:
+                            end = range_func.args[0]
+                        case 2:
+                            begin = range_func.args[0]
+                            end = range_func.args[1]
+                        case 3:
+                            begin = range_func[0]
+                            end = range_func[1]
+                            step = range_func[2]
+                        case _:
+                            raise TranspilerExcetion("unknown args for range in for loop")
+
+                    # we have to assume type is int since there 
+                    # are no type annotations for loops in Python
+                    self.cswriter.write("var ") 
+                    self.traverse(node.target)
+                    self.cswriter.write(" = ")
+                    self.traverse(begin)
+                    self.cswriter.write("; ")
+                    self.traverse(node.target)
+                    self.cswriter.write(" < ")
+                    self.traverse(end)
+                    self.cswriter.write("; ")
+                    self.traverse(node.target)
+                    self.cswriter.write(" += ")
+                    self.traverse(step)
+        else:
+            self.cswriter.write_indented("foreach")
+            with self.cswriter.delimit_args():
+                self.cswriter.write("var ")
+                self.traverse(node.target)
+                self.cswriter.write(" in ")
+                self.traverse(node.iter)
+
+
+        with self.cswriter.block():
+            self.traverse(node.body)
+
     # CS SPECIFIC VISITORS
     def visit_CsFieldDef(self, node: csast.FieldDef):
         self.cswriter.write_indented(f"{node.visibility} ")
