@@ -66,5 +66,12 @@ class CSWriter:
         yield
         self.indents -= 1
 
+    # safe comment function for commenting between tokens
+    def inner_comment(self, comment):
+        self.write(f" /* {comment} */ ")
+
+    def line_comment(self, comment):
+        self.write(f" // {comment}")
+
     def build(self):
         return self.text
