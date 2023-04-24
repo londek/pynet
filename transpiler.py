@@ -88,10 +88,29 @@ class Transpiler(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call):
         generics, args = destructure_args(node.args)
 
-        if isinstance(node.func, ast.Name) and node.func.id == "new":
-            self.cswriter.write("new ")
-            self.traverse(node.args[0])
-            return
+        if isinstance(node.func, ast.Name):
+            match node.func.id:
+                case "new":
+                    if len(node.args) != 1:
+                        raise TranspilerException("forbidden argument count for new special function")
+
+                    self.cswriter.write("new ")
+                    self.traverse(node.args[0])
+                    return
+                case "cast":
+                    if len(node.args) != 2:
+                        raise TranspilerException("forbidden argument count for cast special function")
+
+                    with self.cswriter.delimit("(", ")"):
+                        with self.cswriter.delimit("(", ")"):
+                            if not isinstance(node.args[0], ast.Name):
+                                raise TranspilerException("target cast tyoe should be identifier")
+
+                            self.traverse(node.args[0])
+
+                        self.cswriter.write(" ")
+                        self.traverse(node.args[1])
+                    return
 
         self.traverse(node.func)
 
