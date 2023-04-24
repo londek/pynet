@@ -7,6 +7,8 @@ def cs_constant_repr(constant):
     elif isinstance(constant, str):
         escaped = constant.replace("\\", "\\\\")
         return f"\"{escaped}\""
+    elif isinstance(constant, int):
+        return str(constant)
 
     logging.warn(f"unhandled repr for type {type(constant).__name__}")
 
