@@ -48,7 +48,8 @@ def transpile_file(source_file):
                 dest.write(transpiled)
         except Exception as e:
             logging.exception(f"Caught error while transpiling {source_file}:", exc_info=e)
-    logging.info(f"{source_file} has been transpiled.")
+        else:
+            logging.info(f"{source_file} has been transpiled.")
 
 transpile()
 
