@@ -102,13 +102,13 @@ class Transpiler(ast.NodeVisitor):
 
                     with self.cswriter.delimit("(", ")"):
                         with self.cswriter.delimit("(", ")"):
-                            if not isinstance(node.args[0], ast.Name):
+                            if not isinstance(node.args[1], ast.Name):
                                 raise TranspilerException("target cast tyoe should be identifier")
 
-                            self.traverse(node.args[0])
+                            self.traverse(node.args[1])
 
                         self.cswriter.write(" ")
-                        self.traverse(node.args[1])
+                        self.traverse(node.args[0])
                     return
 
         self.traverse(node.func)
