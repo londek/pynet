@@ -4,7 +4,6 @@ import csast
 
 from cswriter import CSWriter
 from util import cs_constant_repr, find_keyword, flatten, namespacable, statement
-from contextlib import contextmanager
 
 
 class Transpiler(ast.NodeVisitor):
@@ -198,6 +197,7 @@ class Transpiler(ast.NodeVisitor):
 
     @statement
     def visit_AnnAssign(self, node: ast.AnnAssign):
+        # TODO VARIABLE SCOPE TRACKING
         self.traverse(node.annotation)
         self.cswriter.write(" ")
         self.traverse(node.target)
