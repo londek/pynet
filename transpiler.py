@@ -27,6 +27,8 @@ class Transpiler(ast.NodeVisitor):
         
         return self.cswriter.build()
 
+    # 
+
     def is_variable_defined(self, name: str):
         return name in flatten(self.variable_scopes)
 
@@ -42,8 +44,14 @@ class Transpiler(ast.NodeVisitor):
 
         self.variable_scopes[-2].append(name)
 
+    def dump_current_info(self):
+        return f"CS line: {self.cswriter.count_lines()} / Py line: {self.nodes[-1]}"
+
+    # Visitors
+
+    @statement
     def visit_Import(self, node: ast.Import):
-        self.cswriter.write_indented(f"using {node.names[0].name};")
+        self.cswriter.write_indented(f"using {node.names[0].name}")
 
     @namespacable
     def visit_ClassDef(self, node: ast.ClassDef):
@@ -325,6 +333,14 @@ class Transpiler(ast.NodeVisitor):
     def visit_Raise(self, node: ast.Raise):
         self.cswriter.write_indented("throw ")
         self.traverse(node.exc)
+
+    @statement
+    def visit_Break(self, node: ast.Break):
+        self.cswriter.write_indented("break")
+
+    @statement
+    def visit_Continue(self, node: ast.Continue):
+        self.cswriter.write_indented("continue")
 
     # CS SPECIFIC VISITORS
     @statement
