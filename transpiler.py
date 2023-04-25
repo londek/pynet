@@ -125,7 +125,7 @@ class Transpiler(ast.NodeVisitor):
         self.cswriter.write(node.id)
 
     def visit_List(self, node: ast.List):
-        logging.info(f"Using dynamicly typed array on [CS line: {self.cswriter.count_lines()} / Py line: {node.lineno}]")
+        logging.info(f"Using dynamically typed array on [CS line: {self.cswriter.count_lines()} / Py line: {node.lineno}]")
         self.cswriter.write("new dynamic[]")
         with self.cswriter.delimit("{", "}"):
             for element in self.cswriter.enumerate_join(node.elts, ", "):
