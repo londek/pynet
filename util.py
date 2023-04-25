@@ -35,7 +35,7 @@ def get_class_namespace(decorators: list[ast.expr]):
 
 def statement(func):
     def helper(*args, **kwargs):
-        self, = args
+        self = args[0]
         func(*args, **kwargs)
         self.cswriter.write(";")
         
