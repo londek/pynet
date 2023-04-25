@@ -1,4 +1,5 @@
 import ast
+import itertools
 import logging
 
 def cs_constant_repr(constant):
@@ -56,3 +57,6 @@ def namespacable(func):
         
 
     return helper
+
+def flatten(l):
+    return list(itertools.chain.from_iterable(l))

@@ -3,18 +3,45 @@ import logging
 import csast
 
 from cswriter import CSWriter
-from util import cs_constant_repr, find_keyword, namespacable, statement
+from util import cs_constant_repr, find_keyword, flatten, namespacable, statement
+from contextlib import contextmanager
 
 
 class Transpiler(ast.NodeVisitor):
     cswriter = CSWriter()
 
+    nodes = []
+    variable_scopes = []
+
     def __init__(self) -> None:
         super().__init__()
     
     def transpile(self, tree):
-        self.traverse(tree)
+
+        try:
+            self.traverse(tree)
+        except TranspilerException as e:
+            e.cs_line = self.cswriter.count_lines()
+            e.py_line = self.nodes[-1].lineno
+            raise e
+
+        
         return self.cswriter.build()
+
+    def is_variable_defined(self, name: str):
+        return name in flatten(self.variable_scopes)
+
+    def define_variable(self, name: str):
+        if self.is_variable_defined(name):
+            raise TranspilerException("variable has already been defined")
+
+        self.variable_scopes[-1].append(name)
+
+    def define_variable_parent(self, name: str):
+        if self.is_variable_defined(name):
+            raise TranspilerException("variable has already been defined")
+
+        self.variable_scopes[-2].append(name)
 
     def visit_Import(self, node: ast.Import):
         self.cswriter.write_indented(f"using {node.names[0].name};")
@@ -69,12 +96,16 @@ class Transpiler(ast.NodeVisitor):
     def visit_Assign(self, node: ast.Assign):        
         target = node.targets[0]
 
+        self.cswriter.write_indents()
+
         if isinstance(target, ast.Attribute):
-            self.cswriter.write_indents()
+            pass
         elif isinstance(target, ast.Name):
-            self.cswriter.write_indented("var ")
+            if not self.is_variable_defined(target.id):
+                self.cswriter.write("var ")
+                self.define_variable_parent(target.id)
         else:
-            raise TranspilerException("forbidden assignment target")
+            raise TranspilerException(f"forbidden assignment target: {target}")
 
         self.traverse(node.targets[0])
         self.cswriter.write(" = ")
@@ -315,6 +346,17 @@ class Transpiler(ast.NodeVisitor):
         visitor = getattr(self, method)
         return visitor(node)
 
+    def visit(self, node):
+        node.defined_vars = []
+
+        self.nodes.append(node)
+        self.variable_scopes.append([])
+
+        super().visit(node)
+
+        self.nodes.pop()
+        self.variable_scopes.pop()
+
     def traverse(self, node):
         if isinstance(node, list):
             for item in node:
@@ -323,7 +365,7 @@ class Transpiler(ast.NodeVisitor):
             if isinstance(node, csast.AST):
                 self.cs_visit(node)
             else:
-                super().visit(node)
+                self.visit(node)
 
 def is_static(decorators: list[ast.expr]): 
     for decorator in decorators:
@@ -531,4 +573,16 @@ def replace_all_references(node, old, new):
         return ReferenceReplacer(old, new).visit(node)
         
 class TranspilerException(Exception):
-    pass
+    cs_line = None
+    py_line = None
+
+    def __str__(self):
+        message = super().__str__()
+
+        if self.cs_line:
+            message += f" CS line: {self.cs_line}"
+
+        if self.py_line:
+            message += f" Py line: {self.py_line}"
+
+        return message
