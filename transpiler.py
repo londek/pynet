@@ -7,23 +7,18 @@ from util import cs_constant_repr, find_keyword, flatten, indented, namespacable
 
 
 class Transpiler(ast.NodeVisitor):
-    cswriter = CSWriter()
-
-    nodes = []
-    variable_scopes = []
-
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self):
+        self.cswriter = CSWriter()
+        self.nodes = []
+        self.variable_scopes = []
     
     def transpile(self, tree):
-
         try:
             self.traverse(tree)
         except TranspilerException as e:
             e.cs_line = self.cswriter.count_lines()
             e.py_line = self.nodes[-1].lineno
             raise e
-
         
         return self.cswriter.build()
 

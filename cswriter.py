@@ -1,8 +1,9 @@
 from contextlib import contextmanager
 
 class CSWriter:
-    text = ""
-    indents = 0
+    def __init__(self):
+        self.text = ""
+        self.indents = 0
 
     def write(self, text):
         self.text += text

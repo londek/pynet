@@ -1,10 +1,9 @@
-from pathlib import Path
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import PatternMatchingEventHandler
 
-class Watcher(FileSystemEventHandler):
+class Watcher(PatternMatchingEventHandler):
     def __init__(self, action):
+        super().__init__(patterns=["*.py"])
         self.action = action
 
     def on_any_event(self, event):
-        if Path(event.src_path).match("*.py"):
-            self.action()
+        self.action()
