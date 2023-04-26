@@ -102,6 +102,9 @@ class Transpiler(ast.NodeVisitor):
 
     @statement
     def visit_Assign(self, node: ast.Assign):        
+        if isinstance(node.value, ast.Tuple):
+            raise TranspilerException("assignment value can't be a tuple")
+
         target = node.targets[0]
 
         if isinstance(target, ast.Attribute):
@@ -204,10 +207,13 @@ class Transpiler(ast.NodeVisitor):
 
     @statement
     def visit_AnnAssign(self, node: ast.AnnAssign):
+        if isinstance(node.value, ast.Tuple):
+            raise TranspilerException("assignment value can't be a tuple")
+
         if isinstance(node.target, ast.Name):
             if self.is_variable_defined(node.target.id):
                 self.cswriter.line_comment(f"Warning: Used annotated assignment for already defined variable ({self.dump_current_info()})")
-                logging.warn(f"Annotated assignment detected for already defined variable ({self.dump_current_info()}")
+                logging.warn(f"annotated assignment detected for already defined variable ({self.dump_current_info()}")
             else:
                 self.define_variable_parent(node.target.id)
                 self.traverse(node.annotation)
@@ -354,6 +360,9 @@ class Transpiler(ast.NodeVisitor):
     @statement
     def visit_Continue(self, node: ast.Continue):
         self.cswriter.write("continue")
+
+    def visit_Tuple(self, node: ast.Tuple):
+        raise TranspilerException("python tuples are not supported by pynet")
 
     # CS SPECIFIC VISITORS
     @statement
