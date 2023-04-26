@@ -45,7 +45,7 @@ class Transpiler(ast.NodeVisitor):
         self.variable_scopes[-2].append(name)
 
     def dump_current_info(self):
-        return f"CS line: {self.cswriter.count_lines()} / Py line: {self.nodes[-1]}"
+        return f"CS line: {self.cswriter.count_lines()} / Py line: {self.nodes[-1].lineno}"
 
     # Visitors
 
@@ -162,7 +162,7 @@ class Transpiler(ast.NodeVisitor):
         self.cswriter.write(node.id)
 
     def visit_List(self, node: ast.List):
-        logging.info(f"Using dynamically typed array on [CS line: {self.cswriter.count_lines()} / Py line: {node.lineno}]")
+        logging.info(f"Using dynamically typed array on ({self.dump_current_info()}")
         self.cswriter.write("new dynamic[]")
         with self.cswriter.delimit("{", "}"):
             for element in self.cswriter.enumerate_join(node.elts, ", "):
@@ -204,10 +204,20 @@ class Transpiler(ast.NodeVisitor):
 
     @statement
     def visit_AnnAssign(self, node: ast.AnnAssign):
-        # TODO VARIABLE SCOPE TRACKING
-        self.traverse(node.annotation)
-        self.cswriter.write(" ")
-        self.traverse(node.target)
+        if isinstance(node.target, ast.Name):
+            if self.is_variable_defined(node.target.id):
+                self.cswriter.line_comment(f"Warning: Used annotated assignment for already defined variable ({self.dump_current_info()})")
+                logging.warn(f"Annotated assignment detected for already defined variable ({self.dump_current_info()}")
+            else:
+                self.define_variable_parent(node.target.id)
+                self.traverse(node.annotation)
+                self.cswriter.write(" ")
+        elif isinstance(node.target, ast.Attribute):
+            pass
+        else:
+            raise TranspilerException(f"forbidden annotated assignment target: {node.target}")
+
+        self.traverse(node.target)        
         self.cswriter.write(" = ")
         self.traverse(node.value)
 

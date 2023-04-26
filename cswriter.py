@@ -72,6 +72,7 @@ class CSWriter:
 
     def line_comment(self, comment):
         self.write(f" // {comment}")
+        self.write_indents()
 
     def count_lines(self):
         return self.text.count("\n") + 1
