@@ -3,7 +3,7 @@ import logging
 import csast
 
 from cswriter import CSWriter
-from util import cs_constant_repr, find_keyword, flatten, namespacable, statement
+from util import cs_constant_repr, find_keyword, flatten, indented, namespacable, statement
 
 
 class Transpiler(ast.NodeVisitor):
@@ -51,9 +51,10 @@ class Transpiler(ast.NodeVisitor):
 
     @statement
     def visit_Import(self, node: ast.Import):
-        self.cswriter.write_indented(f"using {node.names[0].name}")
+        self.cswriter.write(f"using {node.names[0].name}")
 
     @namespacable
+    @indented
     def visit_ClassDef(self, node: ast.ClassDef):
         access_modifier = get_access_modifier(node.decorator_list)
         funcs, fields = destructure_class(node)
@@ -102,8 +103,6 @@ class Transpiler(ast.NodeVisitor):
     @statement
     def visit_Assign(self, node: ast.Assign):        
         target = node.targets[0]
-
-        self.cswriter.write_indents()
 
         if isinstance(target, ast.Attribute):
             pass
@@ -171,19 +170,19 @@ class Transpiler(ast.NodeVisitor):
     
     @statement
     def visit_Expr(self, node: ast.Expr):
-        self.cswriter.write_indents()
         self.traverse(node.value)
 
     @statement
     def visit_Return(self, node: ast.Return):
-        self.cswriter.write_indented("return ")
+        self.cswriter.write("return ")
         self.traverse(node.value)
 
     def visit_Constant(self, node: ast.Constant):
         self.cswriter.write(cs_constant_repr(node.value))
 
+    @indented
     def visit_If(self, node: ast.If):
-        self.cswriter.write_indented(f"if(")
+        self.cswriter.write(f"if(")
         self.traverse(node.test)
         self.cswriter.write(")")
         with self.cswriter.block():
@@ -253,9 +252,10 @@ class Transpiler(ast.NodeVisitor):
         with self.cswriter.delimit("[", "]"):
             self.traverse(node.slice)
 
+    @indented
     def visit_For(self, node: ast.For):
         if isinstance(node.iter, ast.Call) and isinstance(node.iter.func, ast.Name) and node.iter.func.id == "range":
-            self.cswriter.write_indented("for")
+            self.cswriter.write("for")
             with self.cswriter.delimit_args():
                 if node.iter.func.id == "range":
                     range_func = node.iter
@@ -292,7 +292,7 @@ class Transpiler(ast.NodeVisitor):
                     self.cswriter.write(" += ")
                     self.traverse(step)
         else:
-            self.cswriter.write_indented("foreach")
+            self.cswriter.write("foreach")
             with self.cswriter.delimit_args():
                 self.cswriter.write("var ")
                 self.traverse(node.target)
@@ -303,8 +303,9 @@ class Transpiler(ast.NodeVisitor):
         with self.cswriter.block():
             self.traverse(node.body)
 
+    @indented
     def visit_Match(self, node: ast.Match):
-        self.cswriter.write_indented("switch")
+        self.cswriter.write("switch")
         
         with self.cswriter.delimit_args():
             self.traverse(node.subject)
@@ -317,35 +318,37 @@ class Transpiler(ast.NodeVisitor):
         with self.cswriter.indent():
             self.traverse(node.body)
 
+    @indented
     def visit_MatchValue(self, node: ast.MatchValue):
-        self.cswriter.write_indented("case ")
+        self.cswriter.write("case ")
         self.traverse(node.value)
         self.cswriter.write(":")
 
+    @indented
     def visit_MatchAs(self, node: ast.MatchAs):
         if node.name != None:
             raise TranspilerException(f"expected default case node with name set to None, but got {repr(node.name)}. Please file an issue")
         elif node.pattern != None:
             raise TranspilerException(f"expected default case node with pattern set to None, but got {repr(node.pattern)}. Please file an issue")
-        self.cswriter.write_indented("default:")
+        self.cswriter.write("default:")
 
     @statement
     def visit_Raise(self, node: ast.Raise):
-        self.cswriter.write_indented("throw ")
+        self.cswriter.write("throw ")
         self.traverse(node.exc)
 
     @statement
     def visit_Break(self, node: ast.Break):
-        self.cswriter.write_indented("break")
+        self.cswriter.write("break")
 
     @statement
     def visit_Continue(self, node: ast.Continue):
-        self.cswriter.write_indented("continue")
+        self.cswriter.write("continue")
 
     # CS SPECIFIC VISITORS
     @statement
     def visit_CsFieldDef(self, node: csast.FieldDef):
-        self.cswriter.write_indented(f"{node.visibility} ")
+        self.cswriter.write(f"{node.visibility} ")
 
         if node.static:
             self.cswriter.write("static ")

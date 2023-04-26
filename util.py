@@ -37,6 +37,7 @@ def get_class_namespace(decorators: list[ast.expr]):
 def statement(func):
     def helper(*args, **kwargs):
         self = args[0]
+        self.cswriter.write_indents()
         func(*args, **kwargs)
         self.cswriter.write(";")
         
@@ -54,6 +55,15 @@ def namespacable(func):
                 func(*args, **kwargs)
         else:
             func(*args, **kwargs)
+        
+
+    return helper
+
+def indented(func):
+    def helper(*args, **kwargs):
+        self = args[0]
+        self.cswriter.write_indents()
+        func(*args, **kwargs)
         
 
     return helper
