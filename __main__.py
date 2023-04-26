@@ -44,7 +44,8 @@ def transpile_file(source_file):
 
             transpiled = Transpiler().transpile(tree)
             dest_file = source_file.with_suffix(".cs")
-            with open(dest_file, "w+") as dest:
+
+            with open(dest_file, "w") as dest:
                 dest.write(transpiled)
         except Exception as e:
             logging.exception(f"Caught error while transpiling {source_file}:", exc_info=e)
