@@ -2,6 +2,13 @@ import ast
 import itertools
 import logging
 
+def fullname(o):
+    klass = o.__class__
+    module = klass.__module__
+    if module == 'builtins':
+        return klass.__qualname__ # avoid outputs like 'builtins.str'
+    return module + '.' + klass.__qualname__
+
 def cs_constant_repr(constant):
     if isinstance(constant, bool):
         return "true" if constant else "false"
@@ -10,8 +17,10 @@ def cs_constant_repr(constant):
         return f"\"{escaped}\""
     elif isinstance(constant, int):
         return str(constant)
+    elif constant is None:
+        return "null"
 
-    logging.warn(f"unhandled repr for type {type(constant).__name__}")
+    logging.warn(f"unhandled repr for type {fullname(constant)}")
 
     return repr(constant)
 
