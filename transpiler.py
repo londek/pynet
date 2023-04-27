@@ -22,7 +22,7 @@ class Transpiler(ast.NodeVisitor):
         
         return self.cswriter.build()
 
-    # 
+    # Utility functions
 
     def is_variable_defined(self, name: str):
         return name in flatten(self.variable_scopes)
