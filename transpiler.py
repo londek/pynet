@@ -222,6 +222,31 @@ class Transpiler(ast.NodeVisitor):
         self.cswriter.write(" = ")
         self.traverse(node.value)
 
+    binop = {
+        "Add": "+",
+        "Sub": "-",
+        "Mult": "*",
+        "MatMult": "@",
+        "Div": "/",
+        "Mod": "%",
+        "LShift": "<<",
+        "RShift": ">>",
+        "BitOr": "|",
+        "BitXor": "^",
+        "BitAnd": "&",
+        "FloorDiv": "//",
+        "Pow": "**",
+    }
+
+    @statement
+    def visit_AugAssign(self, node: ast.AugAssign):
+        if isinstance(node.target, ast.Name) and not self.is_variable_defined(node.target.id):
+            raise TranspilerException("AugAssign to nonexistent variable")
+
+        self.traverse(node.target)
+        self.cswriter.write(f" {self.binop[node.op.__class__.__name__]}= ")
+        self.traverse(node.value)
+
     boolops = {"And": "&&", "Or": "||"}
 
     def visit_BoolOp(self, node: ast.BoolOp):
@@ -397,7 +422,7 @@ class Transpiler(ast.NodeVisitor):
         else:
             if isinstance(node, csast.AST):
                 self.cs_visit(node)
-            else:
+            elif isinstance(node, ast.AST):
                 self.visit(node)
 
 def is_static(decorators: list[ast.expr]): 
