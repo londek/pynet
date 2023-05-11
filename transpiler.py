@@ -243,9 +243,22 @@ class Transpiler(ast.NodeVisitor):
         if isinstance(node.target, ast.Name) and not self.is_variable_defined(node.target.id):
             raise TranspilerException("AugAssign to nonexistent variable")
 
+        op = self.binop[node.op.__class__.__name__]
+
         self.traverse(node.target)
-        self.cswriter.write(f" {self.binop[node.op.__class__.__name__]}= ")
+        self.cswriter.write(f" {op}= ")
         self.traverse(node.value)
+
+    def visit_BinOp(self, node: ast.BinOp):
+        op = self.binop[node.op.__class__.__name__]
+
+        with self.cswriter.delimit("(", ")"):
+            self.traverse(node.left)
+
+        self.cswriter.write(f" {op} ")
+
+        with self.cswriter.delimit("(", ")"):
+            self.traverse(node.right)
 
     boolops = {"And": "&&", "Or": "||"}
 
