@@ -56,7 +56,13 @@ class Transpiler(ast.NodeVisitor):
         static = is_static(node.decorator_list)
         name = node.name
         inheritance = get_class_inheritance(node)
+        attributes = get_attributes(node.decorator_list)
 
+        for attribute in attributes:
+            self.cswriter.write_indents()
+            with self.cswriter.delimit("[", "]"):
+                self.traverse(attribute.args[0])
+        
         self.cswriter.write_indented(f"{access_modifier}")
         if static:
             self.cswriter.write(f" static")
@@ -80,7 +86,9 @@ class Transpiler(ast.NodeVisitor):
         attributes = get_attributes(node.decorator_list)
 
         for attribute in attributes:
-            self.cswriter.write_indented(attribute)
+            self.cswriter.write_indents()
+            with self.cswriter.delimit("[", "]"):
+                self.traverse(attribute.args[0])
 
         self.cswriter.write_indented(f"{access_modifier}")
         if static:
@@ -570,8 +578,7 @@ def get_attributes(decorators: list[ast.expr]):
         if decorator.func.id != "attribute":
             continue
 
-        # Python syntax should be alright for most implementations
-        attributes.append(f"[{ast.unparse(decorator.args[0])}]")
+        attributes.append(decorator)
 
     return attributes
 
