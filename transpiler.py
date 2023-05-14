@@ -110,7 +110,7 @@ class Transpiler(ast.NodeVisitor):
 
         target = node.targets[0]
 
-        if isinstance(target, ast.Attribute):
+        if isinstance(target, ast.Attribute) or isinstance(target, ast.Subscript):
             pass
         elif isinstance(target, ast.Name):
             if not self.is_variable_defined(target.id):
