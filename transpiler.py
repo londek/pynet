@@ -246,6 +246,17 @@ class Transpiler(ast.NodeVisitor):
         "Pow": "**",
     }
 
+    def visit_BinOp(self, node: ast.BinOp):
+        op = self.binop[node.op.__class__.__name__]
+
+        with self.cswriter.delimit("(", ")"):
+            self.traverse(node.left)
+
+        self.cswriter.write(f" {op} ")
+
+        with self.cswriter.delimit("(", ")"):
+            self.traverse(node.right)
+
     @statement
     def visit_AugAssign(self, node: ast.AugAssign):
         if isinstance(node.target, ast.Name) and not self.is_variable_defined(node.target.id):
@@ -257,16 +268,12 @@ class Transpiler(ast.NodeVisitor):
         self.cswriter.write(f" {op}= ")
         self.traverse(node.value)
 
-    def visit_BinOp(self, node: ast.BinOp):
-        op = self.binop[node.op.__class__.__name__]
+    unaryops = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}
 
-        with self.cswriter.delimit("(", ")"):
-            self.traverse(node.left)
-
-        self.cswriter.write(f" {op} ")
-
-        with self.cswriter.delimit("(", ")"):
-            self.traverse(node.right)
+    def visit_UnaryOp(self, node: ast.UnaryOp):
+        op = self.unaryops[node.op.__class__.__name__]
+        self.cswriter.write(op)
+        self.traverse(node.operand)
 
     boolops = {"And": "&&", "Or": "||"}
 
