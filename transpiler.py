@@ -15,10 +15,15 @@ class Transpiler(ast.NodeVisitor):
     def transpile(self, tree):
         try:
             self.traverse(tree)
-        except TranspilerException as e:
-            e.cs_line = self.cswriter.count_lines()
-            e.py_line = self.nodes[-1].lineno
-            raise e
+        except TranspilerException as exc:
+            exc.cs_line = self.cswriter.count_lines()
+            exc.py_line = self.nodes[-1].lineno
+            raise exc
+        except Exception as exc:
+            new_exc = TranspilerException("encountered an exception")
+            new_exc.cs_line = self.cswriter.count_lines()
+            new_exc.py_line = self.nodes[-1].lineno
+            raise new_exc from exc
         
         return self.cswriter.build()
 
@@ -420,7 +425,22 @@ class Transpiler(ast.NodeVisitor):
         if node.static:
             self.cswriter.write("static ")
 
-        self.cswriter.write(f"{node.type.id} ")
+        if isinstance(node.type, ast.Call):
+            generics = []
+            for arg in node.type.args:
+                if not isinstance(arg, ast.Call) or not arg.func.id == "generic":
+                    raise Transpiler("invalid field (found a call and expected it to be a generic)")
+
+                generics.append(arg.args[0].id)
+
+            self.cswriter.write(f"{node.type.func.id}")
+
+            with self.cswriter.delimit_generic():
+                self.cswriter.write(", ".join(generics))
+            self.cswriter.write(" ")
+        else:
+            self.cswriter.write(f"{node.type.id} ")
+        
         self.cswriter.write(f"{node.target.id}")
 
         if node.value is not None:
