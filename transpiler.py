@@ -262,12 +262,13 @@ class Transpiler(ast.NodeVisitor):
         op = self.binop[node.op.__class__.__name__]
 
         with self.cswriter.delimit("(", ")"):
-            self.traverse(node.left)
+            with self.cswriter.delimit("(", ")"):
+                self.traverse(node.left)
 
-        self.cswriter.write(f" {op} ")
+            self.cswriter.write(f" {op} ")
 
-        with self.cswriter.delimit("(", ")"):
-            self.traverse(node.right)
+            with self.cswriter.delimit("(", ")"):
+                self.traverse(node.right)
 
     @statement
     def visit_AugAssign(self, node: ast.AugAssign):
