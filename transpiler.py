@@ -87,7 +87,6 @@ class Transpiler(ast.NodeVisitor):
         overrides = does_method_override(node.decorator_list)
         name = node.name
         return_type = get_function_return_type(node)
-        arguments = get_function_arguments(node)
         attributes = get_attributes(node.decorator_list)
 
         for attribute in attributes:
@@ -103,7 +102,10 @@ class Transpiler(ast.NodeVisitor):
                 self.cswriter.write(f" override")
             node.body = replace_all_references(node.body, "self", "this")
 
-        self.cswriter.write(f" {return_type} {name}({', '.join(arguments)})")
+        self.cswriter.write(f" {return_type} {name}")
+        with self.cswriter.delimit_args():
+            for arg in self.cswriter.enumerate_join(node.args.args[0 if static else 1:], ", "):
+                self.traverse(arg)
 
         with self.cswriter.block():
             self.traverse(node.body)
@@ -127,6 +129,11 @@ class Transpiler(ast.NodeVisitor):
         self.traverse(node.targets[0])
         self.cswriter.write(" = ")
         self.traverse(node.value)
+
+    def visit_arg(self, node: ast.arg):
+        self.traverse(node.annotation)
+        self.cswriter.write(" ")
+        self.cswriter.write(node.arg)
 
     def visit_Attribute(self, node: ast.Attribute):
         self.traverse(node.value)
@@ -614,21 +621,6 @@ def get_function_return_type(function_node: ast.FunctionDef):
         return "void"
 
     return function_node.returns.id
-
-def get_function_arguments(function_node: ast.FunctionDef):
-    static = is_static(function_node.decorator_list)
-
-    args = []
-
-    start_index = 0 if static else 1
-
-    for arg in function_node.args.args[start_index:]:
-        if not arg.annotation:
-            raise TranspilerException(f"No type annotation for argument {arg.arg}")
-
-        args.append(f"{arg.annotation.id} {arg.arg}")
-
-    return args
 
 def destructure_args(nodes: list[ast.expr]):
     generics = []
