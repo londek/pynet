@@ -628,9 +628,10 @@ def destructure_args(nodes: list[ast.expr]):
 
     for node in nodes:
         if isinstance(node, ast.Call):
-            if node.func.id == "generic":
-                generics.append(node.args[0].id)
-                continue
+            if isinstance(node.func, ast.Name):
+                if node.func.id == "generic":
+                    generics.append(node.args[0].id)
+                    continue
 
         args.append(node)
 
