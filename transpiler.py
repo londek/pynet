@@ -176,6 +176,10 @@ class Transpiler(ast.NodeVisitor):
             for arg in self.cswriter.enumerate_join(args, ", "):
                 self.traverse(arg)
 
+            for keyword in self.cswriter.enumerate_join(node.keywords, ", "):
+                self.cswriter.write(f"{keyword.arg}=")
+                self.traverse(keyword.value)
+
     def visit_Name(self, node: ast.Name):
         self.cswriter.write(node.id)
 
