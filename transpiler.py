@@ -285,7 +285,7 @@ class Transpiler(ast.NodeVisitor):
         self.cswriter.write(f" {op}= ")
         self.traverse(node.value)
 
-    unaryops = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}
+    unaryops = {"Invert": "~", "Not": "!", "UAdd": "+", "USub": "-"}
 
     def visit_UnaryOp(self, node: ast.UnaryOp):
         op = self.unaryops[node.op.__class__.__name__]
